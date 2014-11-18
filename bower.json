@@ -26,6 +26,6 @@
   },
   "dependencies": {
     "firebase": "~2.0.4",
-    "angularfire": "~0.8.2"
+    "angularfire": "~0.9.0"
   }
 }
