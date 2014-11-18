@@ -3,7 +3,29 @@
 angular.module('MyAwesomeApp')
   .controller('AuthCtrl', function ($scope, $state, $qvAuth) {
 
-    $scope.getCurrentUser
+    $scope.getCurrentUser = function () {
+      $qvAuth.getCurrentUser().then(function (currentUser) {
+        if (currentUser) {
+          console.info('currentUser found', currentUser);  
+        } else {
+          console.log('currentUser not found. Must not be logged in.');
+        }
+        
+      });
+    };
+
+    $scope.getUser = function (uid) {
+      $qvAuth.getUser(uid).then(function (user) {
+        if (user) {
+          console.info('User found', user);
+        } else {
+          console.log('User not found');
+        }
+        
+      }, function (err) {
+        console.warn('getUser error', err);        
+      });
+    };
 
     $scope.logIn = function (email, password) {
       $qvAuth.logIn(email, password).then(function (currentUser) {

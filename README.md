@@ -39,3 +39,5 @@ angular.module('MyAwesomeApp', ['quiver.angularfire-authentication'])
 ### Use
 
 Inject the service across your app as  ```$qvAuth```.
+
+Check out a sample implementation  in [sample-controller.js](https://github.com/deltaepsilon/angularfire-authentication/blob/master/sample-controller.js).

@@ -29,8 +29,8 @@
 
         return deferred.promise;
       },
-      getUser = function (id) {
-        var userRef = $firebase(new Firebase(endpoint + '/users/' + id)),
+      getUser = function (uid) {
+        var userRef = $firebase(new Firebase(endpoint + '/users/' + uid)),
           user = userRef.$asObject();
 
         return user.$loaded()
