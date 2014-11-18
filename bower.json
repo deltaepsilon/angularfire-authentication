@@ -1,0 +1,31 @@
+{
+  "name": "angularfire-authentication",
+  "version": "0.0.1",
+  "homepage": "https://github.com/deltaepsilon/angularfire-authentication",
+  "authors": [
+    "Chris Esplin <chris@quiver.is>"
+  ],
+  "description": "An Angular wrapper for Firebase email/password authentication using AngularFire",
+  "main": "angularfire-authentication.js",
+  "keywords": [
+    "angular",
+    "angularfire",
+    "firebase",
+    "authentication"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "resolutions": {
+    "firebase": "~2.0.4"
+  },
+  "dependencies": {
+    "firebase": "~2.0.4",
+    "angularfire": "~0.8.2"
+  }
+}
