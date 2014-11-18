@@ -1,24 +1,25 @@
-(function () {
-  var module = angular.module('quiver.angularfire-authentication', ['firebase']);
 
-  module.provider('$qvAuthProvider', function () {
+angular.module('quiver.angularfire-authentication', ['firebase'])
+  .provider('AngularFireAuthentication', function () {
     return {
       endpoint: false,
-      setEndpoint: function (endpoint) {
-        this.endpoint = endpoint;
+      setEndpoint: function (value) {
+        this.endpoint = value;
       },
       $get: function () {
         return {
           endpoint: this.endpoint
         };
       }
-    }
-  });
-
-  module.service('$qvAuth', function ($firebase) {
-    var endpoint = qvAuthProvider.endpoint,
+    };
+  })
+  .service('qvStorage', function ($window) {
+    return $window.localStorage;
+  })
+  .service('qvAuth', function ($q, $firebase, AngularFireAuthentication, qvStorage) {
+    var endpoint = AngularFireAuthentication.endpoint,
       ref = new Firebase(endpoint),
-      currentUser = false;
+      currentUser = ref.getAuth();
 
     
 
@@ -30,22 +31,35 @@
         return deferred.promise;
       },
       getUser = function (uid) {
-        var userRef = $firebase(new Firebase(endpoint + '/users/' + uid)),
+        if (!uid) {
+          debugger;
+        }
+        var deferred = $q.defer(),
+          userRef = $firebase(new Firebase(endpoint + '/users/' + uid)),
           user = userRef.$asObject();
 
-        return user.$loaded()
+        user.$loaded().then(function (data) {
+          deferred.resolve(data);
+        }, function (err) {
+          console.log('getUser error', err);
+        });
+
+        return deferred.promise;
+        
       };
 
     ref.onAuth(function (authData) {
       if (!authData) {
         return console.warn('Auth has been lost.')
+      } else if (!authData.uid) {
+        return console.log('authData not loaded'); 
       } else {
         currentUser = authData;
       }
       
-      var headers = {"authorization": authData.firebaseAuthToken, "user-id": authData.id};
+      var headers = {"authorization": authData.token, "user-id": authData.uid};
 
-      getUser(authData.id).then(function (user) {
+      getUser(authData.uid).then(function (user) {
         if (!user) {
           AdminService.getApiUser(currentUser.uid, headers).then(function () {
             console.log('User created.');
@@ -54,7 +68,7 @@
           });
 
         } else {
-          console.log('User authenticated', user);
+          // console.log('User authenticated', user);
         }
       });
 
@@ -143,5 +157,3 @@
 
     };
   });
-
-})();
