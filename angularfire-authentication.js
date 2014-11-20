@@ -20,9 +20,12 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
     var endpoint = AngularFireAuthentication.endpoint,
       ref = new Firebase(endpoint),
       auth = $firebaseAuth(ref),
-      currentUser = ref.getAuth();
+      currentUser = ref.getAuth(),
+      listening;
 
-    
+    auth.$onAuth(function (authData) { // Keep the local copy in sync with the fb state
+      currentUser = authData;
+    });
 
     var getCurrentUser = function () {
         var deferred = $q.defer();
@@ -33,7 +36,7 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
       },
       getUser = function (uid) {
         if (!uid) {
-          debugger;
+          console.warn('No uid passed into getUser! Fix this! Now!');
         }
         var deferred = $q.defer(),
           userRef = $firebase(new Firebase(endpoint + '/users/' + uid)),
@@ -47,18 +50,7 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
 
         return deferred.promise;
         
-      };
-
-    auth.$onAuth(function (authData) {
-      if (!authData) {
-        console.warn('Auth has been lost.')
-      } else if (!authData.uid) {
-        console.log('authData not loaded'); 
-      } else {
-        currentUser = authData;
-      }
-
-    });
+      };    
 
     return {
       ref: ref,
