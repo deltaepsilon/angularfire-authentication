@@ -34,21 +34,12 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
 
         return deferred.promise;
       },
-      getUser = function (uid) {
-        if (!uid) {
-          console.warn('No uid passed into getUser! Fix this! Now!');
+      getUser = function (key) {
+        if (!key) {
+          console.warn('No key passed into getUser! Fix this! Now!');
         }
-        var deferred = $q.defer(),
-          userRef = $firebase(new Firebase(endpoint + '/users/' + uid)),
-          user = userRef.$asObject();
 
-        user.$loaded().then(function (data) {
-          deferred.resolve(data);
-        }, function (err) {
-          console.log('getUser error', err);
-        });
-
-        return deferred.promise;
+        return $firebase(new Firebase(endpoint + '/users/' + key)).$asObject().$loaded();
         
       };    
 
@@ -60,6 +51,22 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
       getCurrentUser: getCurrentUser,
 
       getUser: getUser,
+
+      getResolvedPromise: function (data) {
+        var deferred = $q.defer();
+
+        deferred.resolve(data);
+
+        return deferred.promise;
+      },
+
+      getRejectedPromise: function (data) {
+        var deferred = $q.defer();
+
+        deferred.reject(data);
+
+        return deferred.promise;
+      },
 
       logIn: function (email, password, remember) {
         return auth.$authWithPassword({
@@ -111,6 +118,27 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
           password: password
         });
 
+      },
+
+      getHeaders: function (authData) {
+        var headers = {
+          authorization: authData.token, 
+          uid: authData.uid, 
+          provider: authData.provider
+        };
+
+        if (authData.email) {
+          headers.email = authData.email;
+        } else if (authData.password) {
+          headers.email = authData.password.email;
+        } else if (authData.google) {
+          headers.email = authData.google.email;
+        } else if (authData.facebook) {
+          headers.email = authData.facebook.email;
+        }
+
+        return headers;
+ 
       }
 
     };
