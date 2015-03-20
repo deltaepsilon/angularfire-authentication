@@ -16,7 +16,7 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
   .service('qvStorage', function ($window) {
     return $window.localStorage;
   })
-  .service('qvAuth', function ($q, $firebase, $firebaseAuth, AngularFireAuthentication, qvStorage) {
+  .service('qvAuth', function ($q, $firebaseObject, $firebaseAuth, AngularFireAuthentication, qvStorage) {
     var endpoint = AngularFireAuthentication.endpoint,
       ref = new Firebase(endpoint),
       auth = $firebaseAuth(ref),
@@ -39,7 +39,7 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
           console.warn('No key passed into getUser! Fix this! Now!');
         }
 
-        return $firebase(new Firebase(endpoint + '/users/' + key)).$asObject().$loaded();
+        return $firebaseObject(new Firebase(endpoint + '/users/' + key)).$loaded();
         
       };    
 
