@@ -100,15 +100,19 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
       },
 
       logOut: function () {
-        var deferred = $q.defer();
+        var deferred = $q.defer(),
+          off = auth.$onAuth(function (authData) {
+            off();
+            deferred.resolve(authData);
+          });
 
-        deferred.resolve(auth.$unauth());
+        auth.$unauth();
 
         return deferred.promise;
       },
 
       resetPassword: function (email) {
-        return auth.$sendPasswordResetEmail(email);
+        return auth.$resetPassword({email: email});
 
       },
 
