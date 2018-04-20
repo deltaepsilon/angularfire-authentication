@@ -1,58 +1,72 @@
-
-angular.module('quiver.angularfire-authentication', ['firebase'])
-  .provider('AngularFireAuthentication', function () {
+angular
+  .module('quiver.angularfire-authentication', ['firebase'])
+  .provider('AngularFireAuthentication', function() {
     return {
       endpoint: false,
-      setEndpoint: function (value) {
+      setEndpoint: function(value) {
         this.endpoint = value;
       },
-      $get: function () {
+      $get: function() {
         return {
-          endpoint: this.endpoint
+          endpoint: this.endpoint,
         };
-      }
+      },
     };
   })
-  .service('qvStorage', function ($window) {
+  .service('qvStorage', function($window) {
     return $window.localStorage;
   })
-  .service('qvAuth', function ($q, $firebaseObject, $firebaseAuth, AngularFireAuthentication, qvStorage) {
+  .service('qvAuth', function(
+    $q,
+    $firebaseObject,
+    $firebaseAuth,
+    AngularFireAuthentication,
+    qvStorage
+  ) {
     var endpoint = AngularFireAuthentication.endpoint,
-      ref = new Firebase(endpoint),
-      auth = $firebaseAuth(ref),
-      currentUser = ref.getAuth(),
-      listening;
+      ref = firebase.database().ref(endpoint),
+      auth = $firebaseAuth(firebase.auth()),
+      currentUser = firebase.auth().currentUser,
+      listening,
+      loadedDeferred = $q.defer();
 
-    auth.$onAuth(function (authData) { // Keep the local copy in sync with the fb state
+    auth.$onAuthStateChanged(function(authData) {
+      // Keep the local copy in sync with the fb state
+      loadedDeferred.resolve(authData)
       currentUser = authData;
     });
 
-    var getCurrentUser = function () {
+    var getCurrentUser = function() {
         var deferred = $q.defer();
 
-        deferred.resolve(currentUser);
+        loadedDeferred.promise.then(function () {
+          return deferred.resolve(currentUser);
+        });
 
         return deferred.promise;
       },
-      getUser = function (key) {
+      getUser = function(key) {
         if (!key) {
           console.warn('No key passed into getUser! Fix this! Now!');
         }
 
-        return $firebaseObject(new Firebase(endpoint + '/users/' + key)).$loaded();
-        
-      };    
+        return $firebaseObject(firebase.database().ref(endpoint + '/users/' + key)).$loaded();
+      };
 
     return {
       ref: ref,
-
+      
       auth: auth,
 
       getCurrentUser: getCurrentUser,
 
       getUser: getUser,
 
-      getResolvedPromise: function (data) {
+      verifyUser: function(id, user) {
+        return user.$id === id;
+      },
+
+      getResolvedPromise: function(data) {
         var deferred = $q.defer();
 
         deferred.resolve(data);
@@ -60,7 +74,7 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
         return deferred.promise;
       },
 
-      getRejectedPromise: function (data) {
+      getRejectedPromise: function(data) {
         var deferred = $q.defer();
 
         deferred.reject(data);
@@ -68,40 +82,45 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
         return deferred.promise;
       },
 
-      logIn: function (email, password, remember) {
-        return auth.$authWithPassword({
-          email: email,
-          password: password
-        }, {
-          remember: remember || 'default'
-        });
-
+      logIn: function(email, password, remember) {
+        return auth.$authWithPassword(
+          {
+            email: email,
+            password: password,
+          },
+          {
+            remember: remember || 'default',
+          }
+        );
       },
 
-      register: function (email, password) {
+      register: function(email, password) {
         var deferred = $q.defer();
 
-        ref.createUser({
-          email: email,
-          password: password
-        }, function (err) {
-          return err ? deferred.reject(err) : deferred.resolve();
-        });
+        ref.createUser(
+          {
+            email: email,
+            password: password,
+          },
+          function(err) {
+            return err ? deferred.reject(err) : deferred.resolve();
+          }
+        );
 
         return deferred.promise;
       },
 
-      changePassword: function (email, oldPassword, newPassword) {
+      changePassword: function(email, oldPassword, newPassword) {
         return auth.$changePassword({
           email: email,
           oldPassword: oldPassword,
-          newPassword: newPassword
+          newPassword: newPassword,
         });
       },
 
-      logOut: function () {
+      logOut: function() {
         var deferred = $q.defer(),
-          off = auth.$onAuth(function (authData) {
+          off = auth.$onAuthStateChanged(function(authData) {
             off();
             deferred.resolve(authData);
           });
@@ -111,39 +130,32 @@ angular.module('quiver.angularfire-authentication', ['firebase'])
         return deferred.promise;
       },
 
-      resetPassword: function (email) {
-        return auth.$resetPassword({email: email});
-
+      resetPassword: function(email) {
+        return auth.$resetPassword({ email: email });
       },
 
-      removeUser: function (email, password) {
+      removeUser: function(email, password) {
         return auth.$removeUser({
           email: email,
-          password: password
+          password: password,
         });
-
       },
 
-      getHeaders: function (authData) {
-        var headers = {
-          authorization: authData.token, 
-          uid: authData.uid, 
-          provider: authData.provider
-        };
+      getHeaders: function(authData) {
+        return authData.getToken().then(function(token) {
+          var provider = authData.providerData[0];
+          var headers = {
+            authorization: token,
+            uid: authData.uid,
+            provider: provider.providerId.split('.').shift(),
+          };
 
-        if (authData.email) {
-          headers.email = authData.email;
-        } else if (authData.password) {
-          headers.email = authData.password.email;
-        } else if (authData.google) {
-          headers.email = authData.google.email;
-        } else if (authData.facebook) {
-          headers.email = authData.facebook.email;
-        }
+          if (provider.email) {
+            headers.email = provider.email;
+          }
 
-        return headers;
- 
-      }
-
+          return headers;
+        });
+      },
     };
   });
