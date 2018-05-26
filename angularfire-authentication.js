@@ -32,14 +32,14 @@ angular
 
     auth.$onAuthStateChanged(function(authData) {
       // Keep the local copy in sync with the fb state
-      loadedDeferred.resolve(authData)
+      loadedDeferred.resolve(authData);
       currentUser = authData;
     });
 
     var getCurrentUser = function() {
         var deferred = $q.defer();
 
-        loadedDeferred.promise.then(function () {
+        loadedDeferred.promise.then(function() {
           return deferred.resolve(currentUser);
         });
 
@@ -55,7 +55,7 @@ angular
 
     return {
       ref: ref,
-      
+
       auth: auth,
 
       getCurrentUser: getCurrentUser,
@@ -83,39 +83,18 @@ angular
       },
 
       logIn: function(email, password, remember) {
-        return auth.$authWithPassword(
-          {
-            email: email,
-            password: password,
-          },
-          {
-            remember: remember || 'default',
-          }
-        );
+        return auth.$signInWithEmailAndPassword(email, password);
       },
 
       register: function(email, password) {
         var deferred = $q.defer();
-
-        ref.createUser(
-          {
-            email: email,
-            password: password,
-          },
-          function(err) {
-            return err ? deferred.reject(err) : deferred.resolve();
-          }
-        );
-
-        return deferred.promise;
+        return auth
+          .$createUserWithEmailAndPassword(email, password)
+          .then(deferred.resolve, deferred.reject);
       },
 
       changePassword: function(email, oldPassword, newPassword) {
-        return auth.$changePassword({
-          email: email,
-          oldPassword: oldPassword,
-          newPassword: newPassword,
-        });
+        return auth.$updatePassword(newPassword);
       },
 
       logOut: function() {
@@ -125,13 +104,13 @@ angular
             deferred.resolve(authData);
           });
 
-        auth.$unauth();
+        auth.$signOut();
 
         return deferred.promise;
       },
 
       resetPassword: function(email) {
-        return auth.$resetPassword({ email: email });
+        return auth.$sendPasswordResetEmail(email);
       },
 
       removeUser: function(email, password) {
